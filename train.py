@@ -4,6 +4,7 @@ import math
 import os
 import random
 import time
+import warnings # ajouté
 from copy import deepcopy
 from pathlib import Path
 from threading import Thread
@@ -460,12 +461,12 @@ def train(hyp, opt, device, tb_writer=None):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--weights', type=str, default='yolov5s.pt', help='initial weights path')
-    parser.add_argument('--cfg', type=str, default='', help='model.yaml path')
-    parser.add_argument('--data', type=str, default='data/coco128.yaml', help='data.yaml path')
+    parser.add_argument('--weights', type=str, default='', help='initial weights path')
+    parser.add_argument('--cfg', type=str, default='models/yolov5s.yaml', help='model.yaml path')
+    parser.add_argument('--data', type=str, default='data/coco_kpts.yaml', help='data.yaml path')
     parser.add_argument('--hyp', type=str, default='data/hyp.scratch.yaml', help='hyperparameters path')
-    parser.add_argument('--epochs', type=int, default=300)
-    parser.add_argument('--batch-size', type=int, default=16, help='total batch size for all GPUs')
+    parser.add_argument('--epochs', type=int, default=1)
+    parser.add_argument('--batch-size', type=int, default=4, help='total batch size for all GPUs')
     parser.add_argument('--img-size', nargs='+', type=int, default=[640, 640], help='[train, test] image sizes')
     parser.add_argument('--rect', action='store_true', help='rectangular training')
     parser.add_argument('--resume', nargs='?', const=True, default=False, help='resume most recent training')
@@ -476,7 +477,7 @@ if __name__ == '__main__':
     parser.add_argument('--bucket', type=str, default='', help='gsutil bucket')
     parser.add_argument('--cache-images', action='store_true', help='cache images for faster training')
     parser.add_argument('--image-weights', action='store_true', help='use weighted image selection for training')
-    parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
+    parser.add_argument('--device', default='cpu', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
     parser.add_argument('--multi-scale', action='store_true', help='vary img-size +/- 50%%')
     parser.add_argument('--single-cls', action='store_true', help='train multi-class data as single-class')
     parser.add_argument('--adam', action='store_true', help='use torch.optim.Adam() optimizer')
@@ -542,12 +543,16 @@ if __name__ == '__main__':
     # Train
     logger.info(opt)
     if not opt.evolve:
-        tb_writer = None  # init loggers
-        if opt.global_rank in [-1, 0]:
-            prefix = colorstr('tensorboard: ')
-            logger.info(f"{prefix}Start with 'tensorboard --logdir {opt.project}', view at http://localhost:6006/")
-            tb_writer = SummaryWriter(opt.save_dir)  # Tensorboard
-        train(hyp, opt, device, tb_writer)
+        # (modifié !!! - tb_writer 사용 X)
+        # tb_writer = None  # init loggers
+        # if opt.global_rank in [-1, 0]:
+        #     prefix = colorstr('tensorboard: ')
+        #     logger.info(f"{prefix}Start with 'tensorboard --logdir {opt.project}', view at http://localhost:6006/")
+        #     tb_writer = SummaryWriter(opt.save_dir)  # Tensorboard
+        # train(hyp, opt, device, tb_writer)
+
+        warnings.filterwarnings(action='ignore', message='All-NaN slice encountered') # ajouté
+        train(hyp, opt, device)
 
     # Evolve hyperparameters (optional)
     else:
